@@ -1,7 +1,7 @@
-#![no_std]
-
 use embedded_hal::spi::SpiBus;
 use embedded_hal::digital::OutputPin;
+
+use rtt_target::rprintln;
 
 /// =========================
 /// Protocol constants
@@ -60,14 +60,24 @@ impl SerprogResponse {
                 &buf[..33]
             }
 
-            SerprogResponse::ProgrammerName(name) => {
-                buf[0] = S_ACK;
-                let b = name.as_bytes();
-                let len = b.len().min(buf.len() - 2);
-                buf[1..1 + len].copy_from_slice(&b[..len]);
-                buf[1 + len] = 0;
-                &buf[..2 + len]
+        SerprogResponse::ProgrammerName(name) => {
+            buf[0] = S_ACK;
+
+            let b = name.as_bytes();
+            let fixed_len = 16;
+
+            // Copy at most 16 bytes
+            let copy_len = b.len().min(fixed_len);
+            buf[1..1 + copy_len].copy_from_slice(&b[..copy_len]);
+
+            // Pad remaining bytes with 0
+            for i in copy_len..fixed_len {
+                buf[1 + i] = 0;
             }
+
+            // Total response: 1 (ACK) + 16 bytes
+            &buf[..1 + fixed_len]
+        }
 
             SerprogResponse::SerialBufferSize(v) => {
                 buf[0] = S_ACK;
@@ -136,9 +146,9 @@ enum ParseState {
     // =========================
     // PRESERVED 0x16–0x18
     // =========================
-    WaitSpiCs,
-    WaitSpiMode,
-    WaitSpiCsMode,
+    // WaitSpiCs,
+    // WaitSpiMode,
+    // WaitSpiCsMode,
 }
 
 /// =========================
@@ -189,10 +199,13 @@ impl SerprogState {
         SPI: SpiBus<u8>,
         CS: OutputPin,
     {
+        // rprintln!("Received byte: 0x{:02X}", byte);
         match &mut self.state {
             ParseState::Idle => self.handle_command(byte),
 
             ParseState::SpiHeader { idx } => {
+                // rprintln!("SPI Header byte {}: 0x{:02X}", idx, byte);
+
                 self.buffer[*idx] = byte;
                 *idx += 1;
 
@@ -202,6 +215,7 @@ impl SerprogState {
                         | ((self.buffer[2] as usize) << 16);
 
                     if write_len > 0 {
+                        // rprintln!("SPI Write length: {}", write_len);
                         self.state = ParseState::SpiData {
                             remaining: write_len,
                         };
@@ -213,11 +227,14 @@ impl SerprogState {
             }
 
             ParseState::SpiData { remaining } => {
+                // rprintln!("SPI Data byte ({} remaining): 0x{:02X}", remaining, byte);
                 self.buffer[6 + self.buffer_pos] = byte;
                 self.buffer_pos += 1;
                 *remaining -= 1;
 
                 if *remaining == 0 {
+                    // rprintln!("SPI Data complete");
+                    self.state = ParseState::Idle;
                     return self.execute_spi(spi, cs);
                 }
                 None
@@ -256,9 +273,7 @@ impl SerprogState {
 
             ParseState::WaitBustype
             | ParseState::WaitPin
-            | ParseState::WaitSpiCs
-            | ParseState::WaitSpiMode
-            | ParseState::WaitSpiCsMode => {
+            => {
                 // All are 1-byte consume + ACK behavior (C-compatible)
                 self.state = ParseState::Idle;
                 Some(SerprogResponse::Ack)
@@ -303,6 +318,7 @@ impl SerprogState {
             }
 
             0x10 => Some(SerprogResponse::SyncNOP),
+            0x11 => Some(SerprogResponse::ReadNMaxLen(256)),
 
             0x12 => {
                 self.state = ParseState::WaitBustype;
@@ -328,20 +344,20 @@ impl SerprogState {
                 None
             }
 
-            0x16 => {
-                self.state = ParseState::WaitSpiCs;
-                None
-            }
+            // 0x16 => {
+            //     self.state = ParseState::WaitSpiCs;
+            //     None
+            // }
 
-            0x17 => {
-                self.state = ParseState::WaitSpiMode;
-                None
-            }
+            // 0x17 => {
+            //     self.state = ParseState::WaitSpiMode;
+            //     None
+            // }
 
-            0x18 => {
-                self.state = ParseState::WaitSpiCsMode;
-                None
-            }
+            // 0x18 => {
+            //     self.state = ParseState::WaitSpiCsMode;
+            //     None
+            // }
 
             _ => Some(SerprogResponse::Nak),
         }
@@ -381,10 +397,12 @@ impl SerprogState {
             }
         }
 
+        // rprintln!("SPI write complete: {} bytes", write_len);
+
         for i in 0..read_len {
             let mut b = [0xFF];
             let _ = spi.transfer_in_place(&mut b);
-            self.buffer[i] = b[0];
+            self.buffer[i+1] = b[0];
         }
 
         let _ = cs.set_high();

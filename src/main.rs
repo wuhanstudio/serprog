@@ -6,10 +6,7 @@ use panic_halt as _;
 use cortex_m::asm::delay;
 use cortex_m_rt::entry;
 use stm32f1xx_hal::{
-    pac,
-    prelude::*,
-    spi::{Mode, Phase, Polarity},
-    usb::{Peripheral, UsbBus},
+    pac, prelude::*, spi::{Mode, Phase, Polarity}, usb::{Peripheral, UsbBus}
 };
 use stm32f1xx_hal::rcc;
 
@@ -50,15 +47,14 @@ fn main() -> ! {
     
     // Configure GPIO
     let mut gpioa = dp.GPIOA.split(&mut rcc);
-    let mut gpiob = dp.GPIOB.split(&mut rcc);
     
     // SPI1 pins: SCK=PA5, MISO=PA6, MOSI=PA7
     let sck = gpioa.pa5.into_alternate_push_pull(&mut gpioa.crl);
     let miso = gpioa.pa6;
     let mosi = gpioa.pa7.into_alternate_push_pull(&mut gpioa.crl);
 
-    // CS pin: PB0 (manually controlled)
-    let mut cs = gpiob.pb0.into_push_pull_output(&mut gpiob.crl);
+    // CS pin: PA4 (manually controlled)
+    let mut cs = gpioa.pa4.into_push_pull_output(&mut gpioa.crl);
     cs.set_high(); // CS inactive (high)
 
     // let sck = gpioa.pa5;
@@ -97,8 +93,8 @@ fn main() -> ! {
         .build();
     
     let mut serprog_state = SerprogState::new();
-    let mut rx_buf = [0u8; 64];
-    let mut tx_buf = [0u8; 512];
+    let mut rx_buf = [0u8; 260];
+    let mut tx_buf = [0u8; 260];
     
     loop {
         if !usb_dev.poll(&mut [&mut serial]) {
