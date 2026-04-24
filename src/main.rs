@@ -19,14 +19,9 @@ use serprog::SerprogState;
 use rtt_target::{rtt_init_print, rprintln};
 
 // SPI Mode 0: CPOL=0, CPHA=0
-// const SPI_MODE: Mode = Mode {
-//     polarity: Polarity::IdleLow,
-//     phase: Phase::CaptureOnFirstTransition,
-// };
-
 pub const MODE: Mode = Mode {
-    phase: Phase::CaptureOnSecondTransition,
-    polarity: Polarity::IdleHigh,
+    phase: Phase::CaptureOnFirstTransition,
+    polarity: Polarity::IdleLow,
 };
 
 #[entry]
@@ -47,25 +42,22 @@ fn main() -> ! {
     
     // Configure GPIO
     let mut gpioa = dp.GPIOA.split(&mut rcc);
-    
-    // SPI1 pins: SCK=PA5, MISO=PA6, MOSI=PA7
+
+    // SPI1 pins
     let sck = gpioa.pa5.into_alternate_push_pull(&mut gpioa.crl);
-    let miso = gpioa.pa6;
+    let miso = gpioa.pa6; // input (this is fine)
     let mosi = gpioa.pa7.into_alternate_push_pull(&mut gpioa.crl);
 
-    // CS pin: PA4 (manually controlled)
+    // CS pin
     let mut cs = gpioa.pa4.into_push_pull_output(&mut gpioa.crl);
-    cs.set_high(); // CS inactive (high)
+    cs.set_high();
 
-    // let sck = gpioa.pa5;
-    // let miso = gpioa.pa6;
-    // let mosi = gpioa.pa7;
-    // let cs = gpioa.pa4.into_push_pull_output(&mut gpioa.crl);
-
-    let mut spi = dp
-        .SPI1
-        //.remap(&mut afio.mapr) // if you want to use PB3, PB4, PB5
-        .spi((Some(sck), Some(miso), Some(mosi)), MODE, 9.MHz(), &mut rcc);
+    let mut spi = dp.SPI1.spi(
+        (Some(sck), Some(miso), Some(mosi)),
+        MODE,
+        8.MHz(),
+        &mut rcc,
+    );
 
     // BluePill board has a pull-up resistor on the D+ line.
     // Pull the D+ pin down to send a RESET condition to the USB bus.

@@ -13,7 +13,7 @@ const S_NAK: u8 = 0x15;
 /// Response type
 /// =========================
 #[derive(Debug)]
-pub enum SerprogResponse {
+pub enum SerprogResponse<'a> {
     Ack,
     Nak,
 
@@ -28,14 +28,14 @@ pub enum SerprogResponse {
     SyncNOP,
     SpiFreq([u8; 4]),
 
-    ReadData(usize),
+    ReadData(&'a [u8]),
 }
 
 /// =========================
 /// Response encoding
 /// =========================
-impl SerprogResponse {
-    pub fn to_bytes<'a>(&self, buf: &'a mut [u8]) -> &'a [u8] {
+impl<'a> SerprogResponse<'a> {
+    pub fn to_bytes(&self, buf: &'a mut [u8]) -> &'a [u8] {
         match self {
             SerprogResponse::Ack => {
                 buf[0] = S_ACK;
@@ -60,24 +60,17 @@ impl SerprogResponse {
                 &buf[..33]
             }
 
-        SerprogResponse::ProgrammerName(name) => {
-            buf[0] = S_ACK;
+            SerprogResponse::ProgrammerName(name) => {
+                buf[0] = S_ACK;
 
-            let b = name.as_bytes();
-            let fixed_len = 16;
+                let b = name.as_bytes();
+                let len = b.len().min(16);
 
-            // Copy at most 16 bytes
-            let copy_len = b.len().min(fixed_len);
-            buf[1..1 + copy_len].copy_from_slice(&b[..copy_len]);
+                buf[1..1 + len].copy_from_slice(&b[..len]);
+                buf[1 + len..17].fill(0);
 
-            // Pad remaining bytes with 0
-            for i in copy_len..fixed_len {
-                buf[1 + i] = 0;
+                &buf[..17]
             }
-
-            // Total response: 1 (ACK) + 16 bytes
-            &buf[..1 + fixed_len]
-        }
 
             SerprogResponse::SerialBufferSize(v) => {
                 buf[0] = S_ACK;
@@ -120,9 +113,10 @@ impl SerprogResponse {
                 &buf[..5]
             }
 
-            SerprogResponse::ReadData(len) => {
+            SerprogResponse::ReadData(data) => {
                 buf[0] = S_ACK;
-                &buf[..1 + len]
+                buf[1..1 + data.len()].copy_from_slice(data);
+                &buf[..1 + data.len()]
             }
         }
     }
@@ -194,7 +188,7 @@ impl SerprogState {
         byte: u8,
         spi: &mut SPI,
         cs: &mut CS,
-    ) -> Option<SerprogResponse>
+    ) -> Option<SerprogResponse<'_>>
     where
         SPI: SpiBus<u8>,
         CS: OutputPin,
@@ -227,7 +221,7 @@ impl SerprogState {
             }
 
             ParseState::SpiData { remaining } => {
-                // rprintln!("SPI Data byte ({} remaining): 0x{:02X}", remaining, byte);
+                rprintln!("SPI Data byte ({} remaining): 0x{:02X}", remaining, byte);
                 self.buffer[6 + self.buffer_pos] = byte;
                 self.buffer_pos += 1;
                 *remaining -= 1;
@@ -284,7 +278,7 @@ impl SerprogState {
     /// =========================
     /// Command handler
     /// =========================
-    fn handle_command(&mut self, cmd: u8) -> Option<SerprogResponse> {
+    fn handle_command(&mut self, cmd: u8) -> Option<SerprogResponse<'_>> {
         match cmd {
             0x00 => Some(SerprogResponse::Ack),
 
@@ -336,9 +330,6 @@ impl SerprogState {
                 None
             }
 
-            // =========================
-            // PRESERVED C COMMANDS
-            // =========================
             0x15 => {
                 self.state = ParseState::WaitPin;
                 None
@@ -370,7 +361,7 @@ impl SerprogState {
         &mut self,
         spi: &mut SPI,
         cs: &mut CS,
-    ) -> Option<SerprogResponse>
+    ) -> Option<SerprogResponse<'_>>
     where
         SPI: SpiBus<u8>,
         CS: OutputPin,
@@ -390,6 +381,7 @@ impl SerprogState {
         let _ = cs.set_low();
 
         for i in 0..write_len {
+            rprintln!("SPI Write byte {}: 0x{:02X} ", i, self.buffer[6 + i]);
             let mut b = [self.buffer[6 + i]];
             if spi.transfer_in_place(&mut b).is_err() {
                 let _ = cs.set_high();
@@ -403,10 +395,11 @@ impl SerprogState {
             let mut b = [0xFF];
             let _ = spi.transfer_in_place(&mut b);
             self.buffer[i+1] = b[0];
+            rprintln!("SPI Read byte {}: 0x{:02X} ", i, b[0]);
         }
 
         let _ = cs.set_high();
 
-        Some(SerprogResponse::ReadData(read_len))
+        Some(SerprogResponse::ReadData(&self.buffer[1..1 + read_len]))
     }
 }
