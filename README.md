@@ -2,6 +2,28 @@
 
 A Rust implementation of the flashrom serprog protocol for the STM32F103C8T6 (Blue Pill) board. This allows you to use the Blue Pill as an SPI flash programmer with flashrom.
 
+## Basic Setup - Reading W25Q64 Flash Chip
+
+```
+┌─────────────────────┐
+│   STM32 Blue Pill   │
+│                     │
+│  PA5 (SCK)  ────────┼──────── CLK    ┌──────────────┐
+│  PA6 (MISO) ────────┼──────── DO     │              │
+│  PA7 (MOSI) ────────┼──────── DI     │   W25Q64     │
+│  PB0 (CS)   ────────┼──────── CS     │  SPI Flash   │
+│  3.3V       ────────┼──────── VCC    │              │
+│  GND        ────────┼──────── GND    └──────────────┘
+│                     │
+│  PA11 (USB D-)      │
+│  PA12 (USB D+)      │
+└──────┬──────────────┘
+       │
+       │ USB Cable
+       ▼
+   Computer
+```
+
 ## Features
 
 - ✅ Full serprog protocol v1 support
