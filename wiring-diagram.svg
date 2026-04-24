@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <defs>
+    <style>
+      .board { fill: #1e40af; stroke: #1e3a8a; stroke-width: 2; }
+      .pin { fill: #fbbf24; stroke: #f59e0b; stroke-width: 1; }
+      .chip { fill: #111827; stroke: #374151; stroke-width: 2; }
+      .wire { fill: none; stroke-width: 2; }
+      .wire-sck { stroke: #ef4444; }
+      .wire-miso { stroke: #10b981; }
+      .wire-mosi { stroke: #3b82f6; }
+      .wire-cs { stroke: #f59e0b; }
+      .wire-gnd { stroke: #111827; }
+      .wire-vcc { stroke: #dc2626; }
+      .label { fill: #111827; font-family: monospace; font-size: 12px; }
+      .label-small { fill: #374151; font-family: sans-serif; font-size: 10px; }
+      .title { fill: #111827; font-family: sans-serif; font-size: 18px; font-weight: bold; }
+      .pin-label { fill: #fef3c7; font-family: monospace; font-size: 10px; }
+    </style>
+  </defs>
+  
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" class="title">STM32 Blue Pill to SPI Flash Wiring</text>
+  
+  <!-- Blue Pill Board -->
+  <g id="bluepill">
+    <rect x="50" y="100" width="200" height="400" class="board" rx="5"/>
+    <text x="150" y="90" text-anchor="middle" class="label">STM32F103C8T6 Blue Pill</text>
+    
+    <!-- Pins on right side -->
+    <circle cx="240" cy="180" r="4" class="pin"/>
+    <text x="260" y="184" class="label">PA5 (SCK)</text>
+    
+    <circle cx="240" cy="220" r="4" class="pin"/>
+    <text x="260" y="224" class="label">PA6 (MISO)</text>
+    
+    <circle cx="240" cy="260" r="4" class="pin"/>
+    <text x="260" y="264" class="label">PA7 (MOSI)</text>
+    
+    <circle cx="240" cy="340" r="4" class="pin"/>
+    <text x="260" y="344" class="label">PB0 (CS)</text>
+    
+    <circle cx="240" cy="420" r="4" class="pin"/>
+    <text x="260" y="424" class="label">GND</text>
+    
+    <circle cx="240" cy="460" r="4" class="pin"/>
+    <text x="260" y="464" class="label">3.3V</text>
+    
+    <!-- USB connector -->
+    <rect x="80" y="70" width="30" height="15" class="chip"/>
+    <text x="95" y="65" text-anchor="middle" class="label-small">USB</text>
+  </g>
+  
+  <!-- SPI Flash Chip -->
+  <g id="flash">
+    <rect x="550" y="200" width="180" height="200" class="chip" rx="3"/>
+    <text x="640" y="190" text-anchor="middle" class="label">W25Q64 (8-pin)</text>
+    
+    <!-- Pins -->
+    <circle cx="560" cy="240" r="4" class="pin"/>
+    <text x="520" y="244" text-anchor="end" class="pin-label">1 CS</text>
+    
+    <circle cx="560" cy="280" r="4" class="pin"/>
+    <text x="520" y="284" text-anchor="end" class="pin-label">2 DO</text>
+    
+    <circle cx="560" cy="320" r="4" class="pin"/>
+    <text x="520" y="324" text-anchor="end" class="pin-label">3 WP#</text>
+    
+    <circle cx="560" cy="360" r="4" class="pin"/>
+    <text x="520" y="364" text-anchor="end" class="pin-label">4 GND</text>
+    
+    <circle cx="720" cy="360" r="4" class="pin"/>
+    <text x="740" y="364" class="pin-label">5 DI</text>
+    
+    <circle cx="720" cy="320" r="4" class="pin"/>
+    <text x="740" y="324" class="pin-label">6 CLK</text>
+    
+    <circle cx="720" cy="280" r="4" class="pin"/>
+    <text x="740" y="284" class="pin-label">7 HOLD#</text>
+    
+    <circle cx="720" cy="240" r="4" class="pin"/>
+    <text x="740" y="244" class="pin-label">8 VCC</text>
+    
+    <!-- Note about WP# and HOLD# -->
+    <text x="640" y="420" text-anchor="middle" class="label-small">Connect WP# and HOLD# to VCC</text>
+  </g>
+  
+  <!-- Wiring connections -->
+  <g id="wires">
+    <!-- SCK -->
+    <path d="M 240 180 Q 400 180 720 320" class="wire wire-sck"/>
+    <text x="480" y="240" class="label-small" fill="#ef4444">SCK (9 MHz)</text>
+    
+    <!-- MISO -->
+    <path d="M 240 220 Q 380 220 560 280" class="wire wire-miso"/>
+    <text x="380" y="250" class="label-small" fill="#10b981">MISO (DO)</text>
+    
+    <!-- MOSI -->
+    <path d="M 240 260 Q 450 300 720 360" class="wire wire-mosi"/>
+    <text x="480" y="320" class="label-small" fill="#3b82f6">MOSI (DI)</text>
+    
+    <!-- CS -->
+    <path d="M 240 340 Q 380 300 560 240" class="wire wire-cs"/>
+    <text x="380" y="290" class="label-small" fill="#f59e0b">CS (Chip Select)</text>
+    
+    <!-- GND -->
+    <path d="M 240 420 Q 380 400 560 360" class="wire wire-gnd"/>
+    <text x="380" y="395" class="label-small">GND (Ground)</text>
+    
+    <!-- VCC -->
+    <path d="M 240 460 Q 450 420 720 240" class="wire wire-vcc"/>
+    <text x="480" y="360" class="label-small" fill="#dc2626">3.3V (if needed)</text>
+  </g>
+  
+  <!-- Notes -->
+  <g id="notes">
+    <text x="50" y="540" class="label-small">Important:</text>
+    <text x="50" y="555" class="label-small">• Keep wires short (&lt; 20cm) for reliable operation at 9 MHz</text>
+    <text x="50" y="570" class="label-small">• Only connect 3.3V if flash chip needs external power</text>
+    <text x="50" y="585" class="label-small">• Always connect GND between Blue Pill and flash chip</text>
+  </g>
+  
+  <!-- Legend -->
+  <g id="legend" transform="translate(550, 450)">
+    <text x="0" y="0" class="label-small" font-weight="bold">Signal Colors:</text>
+    <line x1="0" y1="10" x2="30" y2="10" class="wire wire-sck"/>
+    <text x="35" y="14" class="label-small">Clock (SCK)</text>
+    
+    <line x1="0" y1="25" x2="30" y2="25" class="wire wire-miso"/>
+    <text x="35" y="29" class="label-small">Data Out (MISO)</text>
+    
+    <line x1="0" y1="40" x2="30" y2="40" class="wire wire-mosi"/>
+    <text x="35" y="44" class="label-small">Data In (MOSI)</text>
+    
+    <line x1="0" y1="55" x2="30" y2="55" class="wire wire-cs"/>
+    <text x="35" y="59" class="label-small">Chip Select</text>
+    
+    <line x1="0" y1="70" x2="30" y2="70" class="wire wire-gnd"/>
+    <text x="35" y="74" class="label-small">Ground</text>
+    
+    <line x1="0" y1="85" x2="30" y2="85" class="wire wire-vcc"/>
+    <text x="35" y="89" class="label-small">Power (3.3V)</text>
+  </g>
+</svg>
