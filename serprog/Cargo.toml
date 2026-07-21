@@ -2,6 +2,13 @@
 name = "serprog"
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
+description = "A cross-platform Rust implementation of serprog protocol for flashrom"
+homepage = "https://github.com/wuhanstudio/serprog-rs"
+repository = "https://github.com/wuhanstudio/serprog-rs"
+keywords = ["serprog", "flashrom", "embedded-hal"]
+categories = ["embedded", "no-std", "hardware-support"]
+readme = "../README.md"
 
 [dependencies]
 embedded-hal = "1.0.0"
