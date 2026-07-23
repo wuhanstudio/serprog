@@ -1,5 +1,7 @@
 # Serprog - Rust Implementation
 
+[![crates.io](https://img.shields.io/crates/v/serprog.svg)](https://crates.io/crates/serprog)
+
 A cross-platform Rust implementation of the flashrom serprog protocol that supports STM32, ESP32, Arduino UNO, Raspi Pico and CH32V. This allows you to use a MCU as an SPI flash programmer.
 
 ## Basic Setup - Reading W25Q64 Flash Chip
